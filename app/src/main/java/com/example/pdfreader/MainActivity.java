@@ -1,16 +1,8 @@
 package com.example.pdfreader;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -18,10 +10,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-
-import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -65,48 +57,36 @@ public class MainActivity extends AppCompatActivity {
 
             // When an file is picked
             if (requestCode == 3 && resultCode == RESULT_OK && null != data) {
+                Uri PathHolder = data.getData();
+                Log.v("###", "yo " + PathHolder);
+                Log.d("PATH",PathUtils.getPath(getApplicationContext(),PathHolder));
 
-                // Get the file from data
-//                String path = data.getStringExtra(mediaPath);
-                File file = new File(String.valueOf(data.getData()));
-                Uri selectedFile = Uri.fromFile(new File(file.getAbsolutePath()));
-                String[] filePathColumn = {MediaStore.Files.FileColumns.MEDIA_TYPE};
+//                File file = new File(PathUtils.getPath(getApplicationContext(),PathHolder));
 
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String parsedText="";
+                            StringBuilder builder = new StringBuilder();
+                            PdfReader reader = new PdfReader(PathUtils.getPath(getApplicationContext(),PathHolder));
+                            int n = reader.getNumberOfPages();
+//                            for (int i = 0; i <n ; i++) {
+                                parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, 50); //Extracting the content from the different pages
+//                            }
+                            builder.append(parsedText);
 
-//                Log.d("OPEN_STREAM", String.valueOf(getContentResolver().openInputStream(selectedFile)));
-                Log.d("PATH",String.valueOf(data.getData()));
-//                Log.d("URI_SELECTED_FILE", String.valueOf(selectedFile));
+                            reader.close();
+                            runOnUiThread(() -> {
+                                txt.setText(builder.toString());
+                            });
 
-//                String path = getPath(getApplicationContext(),data.getData());
-
-//                Log.d("PATH",path);
-
-//                Cursor cursor = getContentResolver().query(selectedFile, filePathColumn, null, null, null);
-//                assert cursor != null;
-//                cursor.moveToFirst();
-
-
-//                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-//                mediaPath = cursor.getString(columnIndex);
-//                txt.setText(String.valueOf(data.getData()));
-//                cursor.close();
-
-
-
-                try {
-                    String parsedText="";
-                    PdfReader reader = new PdfReader(String.valueOf(selectedFile));
-                    int n = reader.getNumberOfPages();
-                    for (int i = 0; i <n ; i++) {
-                        parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, i+1).trim()+"\n"; //Extracting the content from the different pages
+//                            System.out.println("TEXT FROM PDF : "+builder.toString());
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
                     }
-                    Log.d("PDF_TEXT",parsedText);
-                    System.out.println(parsedText);
-                    reader.close();
-                } catch (Exception e) {
-                    System.out.println(e);
-                    Log.d("EXCEPTION_ERROR",e.toString());
-                }
+                }).start();
             }
             else {
                 Toast.makeText(this, "You haven't picked any file", Toast.LENGTH_LONG).show();
@@ -114,54 +94,9 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show();
             Log.d("EXCEPTION_ERROR",e.toString());
+            e.printStackTrace();
         }
 
     }
 
-
-    // Getting Selected File ID
-    public long getFileId(Activity context, Uri fileUri) {
-        Cursor cursor = context.managedQuery(fileUri, mediaColumns, null, null, null);
-        if (cursor.moveToFirst()) {
-            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID);
-            return cursor.getInt(columnIndex);
-        }
-        return 0;
-    }
-
-
-    public static String getPath(final Context context, final Uri uri) {
-        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
-
-        // DocumentProvider
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
-                System.out.println("getPath() uri: " + uri.toString());
-                System.out.println("getPath() uri authority: " + uri.getAuthority());
-                System.out.println("getPath() uri path: " + uri.getPath());
-
-                // ExternalStorageProvider
-                if ("com.android.externalstorage.documents".equals(uri.getAuthority())) {
-                    final String docId = DocumentsContract.getDocumentId(uri);
-                    final String[] split = docId.split(":");
-                    final String type = split[0];
-                    System.out.println("getPath() docId: " + docId + ", split: " + split.length + ", type: " + type);
-
-                    // This is for checking Main Memory
-                    if ("primary".equalsIgnoreCase(type)) {
-                        if (split.length > 1) {
-                            return Environment.getExternalStorageDirectory() + "/" + split[1] + "/";
-                        } else {
-                            return Environment.getExternalStorageDirectory() + "/";
-                        }
-                        // This is for checking SD Card
-                    } else {
-                        return "storage" + "/" + docId.replace(":", "/");
-                    }
-
-                }
-            }
-        }
-        return null;
-    }
 }
