@@ -12,9 +12,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-
 public class MainActivity extends AppCompatActivity {
 
     Button btnFile;
@@ -61,32 +58,31 @@ public class MainActivity extends AppCompatActivity {
                 Log.v("###", "yo " + PathHolder);
                 Log.d("PATH",PathUtils.getPath(getApplicationContext(),PathHolder));
 
-//                File file = new File(PathUtils.getPath(getApplicationContext(),PathHolder));
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String parsedText="";
-                            StringBuilder builder = new StringBuilder();
-                            PdfReader reader = new PdfReader(PathUtils.getPath(getApplicationContext(),PathHolder));
-                            int n = reader.getNumberOfPages();
-//                            for (int i = 0; i <n ; i++) {
-                                parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, 50); //Extracting the content from the different pages
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        try {
+//                            String parsedText="";
+//                            StringBuilder builder = new StringBuilder();
+//                            PdfReader reader = new PdfReader(PathUtils.getPath(getApplicationContext(),PathHolder));
+//                            int n = reader.getNumberOfPages();
+//                            for (int i = 1; i <n ; i++) {
+//                                parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, i);
 //                            }
-                            builder.append(parsedText);
-
-                            reader.close();
-                            runOnUiThread(() -> {
-                                txt.setText(builder.toString());
-                            });
-
-//                            System.out.println("TEXT FROM PDF : "+builder.toString());
-                        } catch (Exception e) {
-                            System.out.println(e);
-                        }
-                    }
-                }).start();
+//                            builder.append(parsedText);
+//
+//                            reader.close();
+//                            txt.setText("");
+//                            runOnUiThread(() -> {
+//                                txt.setText(builder.toString());
+//                            });
+//
+////                            System.out.println("TEXT FROM PDF : "+builder.toString());
+//                        } catch (Exception e) {
+//                            System.out.println(e);
+//                        }
+//                    }
+//                }).start();
             }
             else {
                 Toast.makeText(this, "You haven't picked any file", Toast.LENGTH_LONG).show();
@@ -98,5 +94,4 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-
 }

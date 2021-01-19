@@ -41,7 +41,6 @@
                     android:paddingLeft="5dp"
                     android:text="Path"
                     android:textSize="20sp" />
-
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
