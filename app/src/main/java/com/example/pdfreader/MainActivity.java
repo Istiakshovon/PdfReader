@@ -12,6 +12,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.parser.PdfTextExtractor;
+
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity {
 
     Button btnFile;
@@ -55,34 +60,35 @@ public class MainActivity extends AppCompatActivity {
             // When an file is picked
             if (requestCode == 3 && resultCode == RESULT_OK && null != data) {
                 Uri PathHolder = data.getData();
+                File file = new File(PathHolder.toString());
                 Log.v("###", "yo " + PathHolder);
                 Log.d("PATH",PathUtils.getPath(getApplicationContext(),PathHolder));
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String parsedText="";
+                            StringBuilder builder = new StringBuilder();
+                            PdfReader reader = new PdfReader(PathUtils.getPath(getApplicationContext(),PathHolder));
+                            int n = reader.getNumberOfPages();
+                            for (int i = 10; i <n ; i++) {
+                                parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, i).trim()+"\n";
+                                Log.d("for loop", String.valueOf(i));
+                                Log.d("PARSED_TEXT",parsedText);
+                            }
+                            builder.append(parsedText);
 
-//                new Thread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        try {
-//                            String parsedText="";
-//                            StringBuilder builder = new StringBuilder();
-//                            PdfReader reader = new PdfReader(PathUtils.getPath(getApplicationContext(),PathHolder));
-//                            int n = reader.getNumberOfPages();
-//                            for (int i = 1; i <n ; i++) {
-//                                parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, i);
-//                            }
-//                            builder.append(parsedText);
-//
-//                            reader.close();
-//                            txt.setText("");
-//                            runOnUiThread(() -> {
-//                                txt.setText(builder.toString());
-//                            });
-//
-////                            System.out.println("TEXT FROM PDF : "+builder.toString());
-//                        } catch (Exception e) {
-//                            System.out.println(e);
-//                        }
-//                    }
-//                }).start();
+                            reader.close();
+                            runOnUiThread(() -> {
+                                txt.setText(builder.toString());
+                            });
+
+//    System.out.println("TEXT FROM PDF : "+builder.toString());
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                }).start();
             }
             else {
                 Toast.makeText(this, "You haven't picked any file", Toast.LENGTH_LONG).show();
@@ -94,4 +100,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 }
