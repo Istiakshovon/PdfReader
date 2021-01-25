@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -23,6 +24,8 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         txt = findViewById(R.id.txt);
 
         permission();
+
 
         btnFile.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,41 +71,14 @@ public class MainActivity extends AppCompatActivity {
 
             // When an file is picked
             if (requestCode == 3 && resultCode == RESULT_OK && null != data) {
-                String path = data.getStringExtra(mediaPath);
-                Log.d("PATH",path+" ");
-                String data1 = data.toString();
-                Log.d("DATA1",data1);
 
-                Uri PathHolder = data.getData();
-                File file = new File(PathHolder.toString());
-                Log.v("###", "yo " + PathHolder);
-                Log.d("PATH",PathUtils.getPath(getApplicationContext(),PathHolder));
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            String parsedText="";
-                            StringBuilder builder = new StringBuilder();
-                            PdfReader reader = new PdfReader(PathUtils.getPath(getApplicationContext(),PathHolder));
-                            int n = reader.getNumberOfPages();
-                            for (int i = 10; i <n ; i++) {
-                                parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, i).trim()+"\n";
-                                Log.d("for_loop", String.valueOf(i));
-                                Log.d("PARSED_TEXT",parsedText+" ");
-                            }
-                            builder.append(parsedText);
+                Uri uri = data.getData();
 
-                            reader.close();
-                            runOnUiThread(() -> {
-                                txt.setText(builder.toString());
-                            });
+                InputStream is = getContentResolver().openInputStream(uri);
 
-//    System.out.println("TEXT FROM PDF : "+builder.toString());
-                        } catch (Exception e) {
-                            System.out.println(e);
-                        }
-                    }
-                }).start();
+
+
+                copyInputStreamToFile(is, new FileOutputStream(new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/file.pdf")));
             }
             else {
                 Toast.makeText(this, "You haven't picked any file", Toast.LENGTH_LONG).show();
@@ -114,7 +91,49 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void copyInputStreamToFile(InputStream in, FileOutputStream out ) {
+        try {
+            byte[] buf = new byte[1024];
+            int len;
+            while((len=in.read(buf))>0){
+                out.write(buf,0,len);
+            }
+            out.close();
+            in.close();
+            getText();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }}
 
+    private void getText(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String parsedText="";
+                    StringBuilder builder = new StringBuilder();
+                    PdfReader reader = new PdfReader(Environment.getExternalStorageDirectory().getAbsolutePath()+"/file.pdf");
+                    int n = reader.getNumberOfPages();
+                    for (int i = 10; i <n ; i++) {
+                        String finalParsedText = parsedText;
+                        runOnUiThread(() -> {
+                            txt.setText(finalParsedText);
+                        });
+                        parsedText   = parsedText+ PdfTextExtractor.getTextFromPage(reader, i).trim()+"\n";
+                        Log.d("for_loop", String.valueOf(i));
+                        Log.d("PARSED_TEXT",parsedText+" ");
+                    }
+                    builder.append(parsedText);
+
+                    reader.close();
+
+//    System.out.println("TEXT FROM PDF : "+builder.toString());
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+        }).start();
+    }
     private void permission(){
         Dexter.withContext(this)
                 .withPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -143,5 +162,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }).check();
     }
+
+
+
 
 }
